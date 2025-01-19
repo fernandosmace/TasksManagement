@@ -1,5 +1,7 @@
 ﻿using Flunt.Validations;
+using System.Text;
 using TasksManagement.Domain.Enums;
+using TasksManagement.Domain.Events;
 
 namespace TasksManagement.Domain.Entities;
 public class Task : Entity
@@ -33,20 +35,26 @@ public class Task : Entity
             .IsNotNullOrWhiteSpace(Description, nameof(Description), $"Campo {nameof(Description)} não foi informado.")
             .IsGreaterOrEqualsThan(DueDate, DateTime.UtcNow, nameof(DueDate), $"Campo {nameof(DueDate)} deve ser uma data futura."));
     }
-    public void AddComment(Comment comment)
-    {
-        _comments.Add(comment);
-    }
+    public void AddComment(Comment comment) => _comments.Add(comment);
 
-    public void AddHistory(TaskHistory history)
+    public void Update(string title, string description, DateTime dueDate, ETaskStatus status, Guid userId)
     {
-        _history.Add(history);
-    }
-    public void UpdateStatus(ETaskStatus status, Guid userId)
-    {
-        if (status == Status) return;
+        var changes = new StringBuilder();
 
-        _history.Add(new TaskHistory($"{nameof(Status)} atualizado de {Status} para {status}", Id, userId));
+        if (Title != title)
+            changes.AppendLine($"Título atualizado de '{Title}' para '{title}'. ");
+        if (Description != description)
+            changes.AppendLine($"Descrição atualizada de '{Description}' para '{description}'. ");
+        if (DueDate != dueDate)
+            changes.AppendLine($"Data de entrega atualizada de '{DueDate}' para '{dueDate}'. ");
+        if (Status != status)
+            changes.AppendLine($"Status alterado de '{Status}' para '{status}'. ");
+
+        Title = title;
+        Description = description;
+        DueDate = dueDate;
         Status = status;
+
+        DomainEvents.Raise(new TaskUpdatedEvent(Id, changes.ToString().Trim(), DateTime.UtcNow, userId));
     }
 }

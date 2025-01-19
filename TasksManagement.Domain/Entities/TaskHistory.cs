@@ -1,22 +1,18 @@
-﻿using Flunt.Validations;
-
-namespace TasksManagement.Domain.Entities;
-public class TaskHistory : Entity
+﻿namespace TasksManagement.Domain.Entities;
+public class TaskHistory
 {
-    public Guid TaskId { get; private set; }
-    public string Changes { get; private set; }
-    public DateTime ChangedAt { get; private set; }
-    public Guid ChangedBy { get; private set; }
+    public Guid Id { get; set; }
+    public Guid TaskId { get; set; }
+    public string Changes { get; set; }
+    public DateTime ChangedAt { get; set; }
+    public Guid ChangedBy { get; set; }
 
     public TaskHistory(string changes, Guid taskId, Guid changedBy)
     {
+        Id = Guid.NewGuid();
         Changes = changes;
         TaskId = taskId;
         ChangedBy = changedBy;
         ChangedAt = DateTime.UtcNow;
-
-        AddNotifications(new Contract<TaskHistory>()
-            .Requires()
-            .IsNotNullOrEmpty(Changes, nameof(Changes), $"Campo {nameof(Changes)} não foi informado."));
     }
 }
