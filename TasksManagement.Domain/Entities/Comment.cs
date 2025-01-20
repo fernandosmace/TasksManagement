@@ -15,6 +15,11 @@ public class Comment : Entity
         UserId = userId;
         CreatedAt = DateTime.UtcNow;
 
+        Validar();
+    }
+
+    protected override void Validar()
+    {
         AddNotifications(new Contract<Comment>()
             .Requires()
             .IsNotNullOrEmpty(Content, nameof(Content), $"Campo {nameof(Content)} não foi informado."));

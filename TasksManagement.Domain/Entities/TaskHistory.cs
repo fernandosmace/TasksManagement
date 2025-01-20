@@ -1,12 +1,25 @@
-﻿namespace TasksManagement.Domain.Entities;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace TasksManagement.Domain.Entities;
 public class TaskHistory
 {
+    [BsonId, BsonGuidRepresentation(GuidRepresentation.Standard)]
     public Guid Id { get; set; }
+
+    [BsonElement, BsonGuidRepresentation(GuidRepresentation.Standard)]
     public Guid TaskId { get; set; }
+
+    [BsonElement]
     public string Changes { get; set; }
+
+    [BsonElement]
     public DateTime ChangedAt { get; set; }
+
+    [BsonElement, BsonGuidRepresentation(GuidRepresentation.Standard)]
     public Guid ChangedBy { get; set; }
 
+    [BsonConstructor]
     public TaskHistory(string changes, Guid taskId, Guid changedBy)
     {
         Id = Guid.NewGuid();

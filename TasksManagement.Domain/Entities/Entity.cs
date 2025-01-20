@@ -9,4 +9,6 @@ public abstract class Entity : Notifiable<Notification>
     {
         Id = Guid.NewGuid();
     }
+
+    protected abstract void Validar();
 }
