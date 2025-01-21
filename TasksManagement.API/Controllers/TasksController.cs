@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TasksManagement.API.Models.InputModels.Task;
 using TasksManagement.Domain.Interfaces.Services;
+using TasksManagement.Domain.Models.OutputModels;
 using TasksManagement.Domain.Models.OutputModels.Comments;
 using TasksManagement.Domain.Models.OutputModels.Task;
 
@@ -21,7 +22,15 @@ public class TasksController : ControllerBase
         _userService = userService;
     }
 
+    /// <summary>
+    /// Obtém uma tarefa pelo ID.
+    /// </summary>
+    /// <param name="id">O ID da tarefa.</param>
+    /// <returns>Retorna a tarefa ou um erro se não encontrada.</returns>
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(TaskWithProjectOutputModel), 200)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
     public async Task<ActionResult> GetByIdAsync(Guid id)
     {
         var result = await _taskService.GetByIdAsync(id);
@@ -56,49 +65,19 @@ public class TasksController : ControllerBase
         return Ok(taskOutput);
     }
 
-    [HttpGet("project/{projectId}")]
-    public async Task<ActionResult> GetByProjectIdAsync(Guid projectId)
-    {
-        var result = await _taskService.GetByProjectIdAsync(projectId);
-
-        if (!result.IsSuccess)
-        {
-            return StatusCode(result.StatusCode ?? 500, new
-            {
-                message = result.Message,
-                errors = result.Notifications
-            });
-        }
-
-        var tasksOutput = new List<TaskOutputModel>();
-        foreach (var task in result.Data!)
-        {
-            tasksOutput.Add(new TaskOutputModel
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Description = task.Description,
-                DueDate = task.DueDate,
-                Priority = task.Priority,
-                Status = task.Status,
-                Comments = task.Comments.Select(comment => new CommentOutputModel
-                {
-                    Id = comment.Id,
-                    Content = comment.Content,
-                    CreatedAt = comment.CreatedAt,
-                    UserId = comment.UserId
-                }).ToList()
-            });
-        }
-
-        return Ok(tasksOutput);
-    }
-
+    /// <summary>
+    /// Cria uma nova tarefa.
+    /// </summary>
+    /// <param name="inputModel">Os dados para a criação da tarefa.</param>
+    /// <returns>Retorna a tarefa criada ou um erro se houver falha.</returns>
     [HttpPost]
+    [ProducesResponseType(typeof(TaskWithProjectOutputModel), 201)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 400)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
     public async Task<IActionResult> CreateAsync(CreateTaskInputModel inputModel)
     {
         if (inputModel == null)
-            return BadRequest("Dados para criação do projeto não informados.");
+            return BadRequest("Dados para criação da tarefa não informados.");
 
         var result = await _taskService.CreateAsync(inputModel);
 
@@ -125,7 +104,17 @@ public class TasksController : ControllerBase
         return Created("", taskOutput);
     }
 
+    /// <summary>
+    /// Atualiza uma tarefa existente.
+    /// </summary>
+    /// <param name="id">O ID da tarefa a ser atualizada.</param>
+    /// <param name="inputModel">Os dados para a atualização da tarefa.</param>
+    /// <returns>Retorna sucesso ou erro caso não consiga atualizar a tarefa.</returns>
     [HttpPut("{id}")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 400)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
     public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] UpdateTaskInputModel inputModel)
     {
         if (inputModel == null)
@@ -145,7 +134,16 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Exclui uma tarefa.
+    /// </summary>
+    /// <param name="id">O ID da tarefa a ser excluída.</param>
+    /// <returns>Retorna sucesso ou erro caso não consiga excluir a tarefa.</returns>
     [HttpDelete("{id}")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 400)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+    [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _taskService.DeleteAsync(id);

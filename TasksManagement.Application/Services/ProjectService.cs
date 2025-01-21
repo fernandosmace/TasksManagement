@@ -9,10 +9,12 @@ namespace TasksManagement.Application.Services
     {
         private readonly IUserService _userService;
         private readonly IProjectRepository _projectRepository;
+        private readonly ITaskRepository _taskRepository;
 
-        public ProjectService(IUserService userService, IProjectRepository projectRepository)
+        public ProjectService(IUserService userService, IProjectRepository projectRepository, ITaskRepository taskRepository)
         {
             _userService = userService;
+            _taskRepository = taskRepository;
             _projectRepository = projectRepository;
         }
 
@@ -45,6 +47,23 @@ namespace TasksManagement.Application.Services
             catch (Exception ex)
             {
                 return Result.Failure<IEnumerable<Project>>("Ocorreu um erro inesperado", statusCode: 500);
+            }
+        }
+
+        public async Task<Result<IEnumerable<TaskItem>>> GetTasksByProjectIdAsync(Guid projectId)
+        {
+            try
+            {
+                var project = await _projectRepository.GetByIdAsync(projectId);
+                if (project == null)
+                    return Result.Failure<IEnumerable<TaskItem>>("Projeto não encontrado.", statusCode: 404);
+
+                var tasks = await _taskRepository.GetByProjectIdAsync(projectId);
+                return Result.Success(tasks);
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure<IEnumerable<TaskItem>>("Ocorreu um erro inesperado", statusCode: 500);
             }
         }
 

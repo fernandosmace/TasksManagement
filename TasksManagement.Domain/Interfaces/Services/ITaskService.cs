@@ -13,13 +13,6 @@ namespace TasksManagement.Domain.Interfaces.Services
         Task<Result<TaskItem>> GetByIdAsync(Guid id);
 
         /// <summary>
-        /// Obtém todas as tarefas de um projeto pelo ID do projeto.
-        /// </summary>
-        /// <param name="projectId">O ID do projeto.</param>
-        /// <returns>O resultado contendo as tarefas ou erro.</returns>
-        Task<Result<IEnumerable<TaskItem>>> GetByProjectIdAsync(Guid projectId);
-
-        /// <summary>
         /// Cria uma nova tarefa.
         /// </summary>
         /// <param name="inputModel">Os dados de entrada para criação da tarefa.</param>

@@ -34,23 +34,6 @@ namespace TasksManagement.Services
             }
         }
 
-        public async Task<Result<IEnumerable<TaskItem>>> GetByProjectIdAsync(Guid projectId)
-        {
-            try
-            {
-                var project = await _projectService.GetByIdAsync(projectId);
-                if (project == null || project.Data == null)
-                    return Result.Failure<IEnumerable<TaskItem>>("Projeto não encontrado.", statusCode: 404);
-
-                var tasks = await _taskRepository.GetByProjectIdAsync(projectId);
-                return Result.Success(tasks);
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure<IEnumerable<TaskItem>>("Ocorreu um erro inesperado", statusCode: 500);
-            }
-        }
-
         public async Task<Result<TaskItem>> CreateAsync(CreateTaskInputModel inputModel)
         {
             try

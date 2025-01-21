@@ -2,6 +2,7 @@
 using TasksManagement.API.Models.InputModels.Project;
 using TasksManagement.API.Models.OutputModels.Project;
 using TasksManagement.Domain.Interfaces.Services;
+using TasksManagement.Domain.Models.OutputModels;
 using TasksManagement.Domain.Models.OutputModels.Task;
 
 namespace TasksManagement.API.Controllers
@@ -24,18 +25,19 @@ namespace TasksManagement.API.Controllers
         /// <returns>Retorna o projeto ou um erro se não encontrado.</returns>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ProjectOutputModel), 200)]
-        [ProducesResponseType(404)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             var result = await _projectService.GetByIdAsync(id);
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode ?? 500, new
-                {
-                    message = result.Message,
-                    errors = result.Notifications
-                });
+                return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
             }
 
             var projectOutput = new ProjectOutputModel
@@ -64,18 +66,19 @@ namespace TasksManagement.API.Controllers
         /// <returns>Retorna os projetos ou um erro se não encontrados.</returns>
         [HttpGet("user/{userId}")]
         [ProducesResponseType(typeof(IEnumerable<ProjectOutputModel>), 200)]
-        [ProducesResponseType(404)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
         public async Task<IActionResult> GetAllByUserIdAsync(Guid userId)
         {
             var result = await _projectService.GetAllByUserIdAsync(userId);
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode ?? 500, new
-                {
-                    message = result.Message,
-                    errors = result.Notifications
-                });
+                return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
             }
 
             var projectOutputs = new List<ProjectOutputModel>();
@@ -102,14 +105,53 @@ namespace TasksManagement.API.Controllers
         }
 
         /// <summary>
-        /// Cria um novo projeto.
+        /// Obtém todas as tarefas associadas a um projeto.
+        /// </summary>
+        /// <param name="projectId">O ID do projeto para o qual as tarefas serão retornadas.</param>
+        /// <returns>Retorna as tarefas associadas ao projeto ou um erro caso não existam tarefas ou o projeto não seja encontrado.</returns>
+        [HttpGet("{projectId}/tasks")]
+        [ProducesResponseType(typeof(IEnumerable<TaskOutputModel>), 200)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
+        public async Task<IActionResult> GetTasksByProjectIdAsync(Guid projectId)
+        {
+            var result = await _projectService.GetTasksByProjectIdAsync(projectId);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
+            }
+
+            var tasksOutput = new List<TaskOutputModel>();
+            foreach (var task in result.Data!)
+            {
+                tasksOutput.Add(new TaskOutputModel
+                {
+                    Id = task.Id,
+                    Title = task.Title,
+                    Description = task.Description,
+                    DueDate = task.DueDate,
+                    Status = task.Status,
+                    Priority = task.Priority
+                });
+            }
+
+            return Ok(tasksOutput);
+        }
+
+        /// <summary>
+        /// Cria um novo projeto. E cria novo usuário, se não existir.
         /// </summary>
         /// <param name="inputModel">Os dados para a criação do projeto.</param>
         /// <returns>Retorna o projeto criado ou um erro se houver falha.</returns>
         [HttpPost]
         [ProducesResponseType(typeof(ProjectOutputModel), 201)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(422)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
         public async Task<IActionResult> CreateAsync(CreateProjectInputModel inputModel)
         {
             if (inputModel == null)
@@ -119,11 +161,11 @@ namespace TasksManagement.API.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode ?? 500, new
-                {
-                    message = result.Message,
-                    errors = result.Notifications
-                });
+                return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
             }
 
             var projectOutput = new ProjectOutputModel
@@ -144,9 +186,9 @@ namespace TasksManagement.API.Controllers
         /// <returns>Retorna sucesso ou erro caso não consiga atualizar o projeto.</returns>
         [HttpPut("{id}")]
         [ProducesResponseType(204)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(422)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 400)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
         public async Task<IActionResult> UpdateAsync(Guid id, [FromBody] UpdateProjectInputModel inputModel)
         {
             if (inputModel == null)
@@ -156,11 +198,11 @@ namespace TasksManagement.API.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode ?? 500, new
-                {
-                    message = result.Message,
-                    errors = result.Notifications
-                });
+                return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
             }
 
             return NoContent();
@@ -173,19 +215,20 @@ namespace TasksManagement.API.Controllers
         /// <returns>Retorna sucesso ou erro caso não consiga excluir o projeto.</returns>
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(422)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 400)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 404)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
         public async Task<IActionResult> DeleteAsync(Guid id)
         {
             var result = await _projectService.DeleteAsync(id);
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode ?? 500, new
-                {
-                    message = result.Message,
-                    errors = result.Notifications
-                });
+                return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
             }
 
             return NoContent();

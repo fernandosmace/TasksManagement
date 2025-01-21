@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TasksManagement.API.Models.InputModels.Comment;
 using TasksManagement.Domain.Interfaces.Services;
+using TasksManagement.Domain.Models.OutputModels;
 using TasksManagement.Domain.Models.OutputModels.Comments;
 
 namespace TasksManagement.API.Controllers
@@ -27,8 +28,8 @@ namespace TasksManagement.API.Controllers
         /// <returns>Retorna o comentário criado ou erro se houver falha na criação.</returns>
         [HttpPost]
         [ProducesResponseType(typeof(CommentWithTaskOutputModel), 201)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(422)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 400)]
+        [ProducesResponseType(typeof(ErrorResultOutputModel), 422)]
         public async Task<IActionResult> Create(CreateCommentInputModel inputModel)
         {
             if (inputModel == null)
@@ -38,11 +39,11 @@ namespace TasksManagement.API.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode ?? 500, new
-                {
-                    message = result.Message,
-                    errors = result.Notifications
-                });
+                return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
             }
 
             var commentOutput = new CommentWithTaskOutputModel

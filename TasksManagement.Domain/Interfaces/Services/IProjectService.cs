@@ -20,6 +20,13 @@ public interface IProjectService
     Task<Result<IEnumerable<Project>>> GetAllByUserIdAsync(Guid userId);
 
     /// <summary>
+    /// Obtém as tarefas associadas a um projeto específico.
+    /// </summary>
+    /// <param name="projectId">O ID do projeto cujas tarefas serão recuperadas.</param>
+    /// <returns>O resultado contendo uma lista de tarefas associadas ao projeto ou um erro, caso o projeto não exista ou ocorram problemas na busca das tarefas.</returns>
+    Task<Result<IEnumerable<TaskItem>>> GetTasksByProjectIdAsync(Guid projectId);
+
+    /// <summary>
     /// Cria um novo projeto.
     /// </summary>
     /// <param name="inputModel">Os dados de entrada para a criação do projeto.</param>
