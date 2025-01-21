@@ -20,5 +20,7 @@ public static class Setup
         services.AddScoped<ITaskService, TaskService>();
         services.AddScoped<ICommentService, CommentService>();
         services.AddScoped<ITaskHistoryService, TaskHistoryService>();
+        services.AddScoped<ITaskReportService, TaskReportService>();
+        services.AddScoped<IProjectReportService, ProjectReportService>();
     }
 }

@@ -2,6 +2,7 @@
 using TasksManagement.Domain.Entities;
 
 namespace TasksManagement.Infrastructure.Database;
+
 public class SqlDbContext : DbContext
 {
     public SqlDbContext(DbContextOptions<SqlDbContext> options) : base(options) { }
@@ -23,8 +24,8 @@ public class SqlDbContext : DbContext
             entity.Property(u => u.Role).IsRequired().HasMaxLength(100);
 
             entity.HasIndex(u => u.Id).HasDatabaseName("IX_Users_Id");
-            entity.HasIndex(entity => entity.Name).HasDatabaseName("IX_Users_Name"); ;
-            entity.HasIndex(entity => entity.Role).HasDatabaseName("IX_Users_Role"); ;
+            entity.HasIndex(entity => entity.Name).HasDatabaseName("IX_Users_Name");
+            entity.HasIndex(entity => entity.Role).HasDatabaseName("IX_Users_Role");
         });
 
         modelBuilder.Entity<Project>(entity =>
@@ -51,7 +52,7 @@ public class SqlDbContext : DbContext
                   .HasConstraintName("FK_Projects_Users");
 
             entity.HasIndex(p => p.Id).HasDatabaseName("IX_Projects_Id");
-            entity.HasIndex(p => p.Name).HasDatabaseName("IX_Projects_Name"); ;
+            entity.HasIndex(p => p.Name).HasDatabaseName("IX_Projects_Name");
             entity.HasIndex(p => p.UserId).HasDatabaseName("IX_Projects_UserId");
         });
 
@@ -63,18 +64,20 @@ public class SqlDbContext : DbContext
             entity.Property(t => t.Title).IsRequired().HasMaxLength(150);
             entity.Property(t => t.Description).HasMaxLength(500);
             entity.Property(t => t.DueDate).IsRequired();
+            entity.Property(t => t.CompletionDate).IsRequired(false);
             entity.Property(t => t.Status).IsRequired();
             entity.Property(t => t.Priority).IsRequired();
             entity.Property(t => t.ProjectId).IsRequired();
 
             entity.HasMany(p => p.Comments)
                   .WithOne()
-                  .HasForeignKey(t => t.TaskId)
+                  .HasForeignKey(c => c.TaskId)
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(t => t.Id).HasDatabaseName("IX_Tasks_Id");
             entity.HasIndex(t => t.ProjectId).HasDatabaseName("IX_Tasks_ProjectId");
             entity.HasIndex(t => t.DueDate).HasDatabaseName("IX_Tasks_DueDate");
+            entity.HasIndex(t => t.CompletionDate).HasDatabaseName("IX_Tasks_CompletionDate");
         });
 
         modelBuilder.Entity<Comment>(entity =>

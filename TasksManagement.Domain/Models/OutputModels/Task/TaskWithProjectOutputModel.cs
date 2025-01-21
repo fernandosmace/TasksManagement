@@ -8,6 +8,7 @@ public record TaskWithProjectOutputModel
     public string? Title { get; set; }
     public string? Description { get; set; }
     public DateTime DueDate { get; set; }
+    public DateTime CompletionDate { get; set; }
     public ETaskStatus Status { get; set; }
     public ETaskPriority Priority { get; set; }
     public Guid ProjectId { get; set; }

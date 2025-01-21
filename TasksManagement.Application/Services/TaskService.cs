@@ -1,5 +1,6 @@
 ﻿using TasksManagement.API.Models.InputModels.Task;
 using TasksManagement.Domain.Entities;
+using TasksManagement.Domain.Enums;
 using TasksManagement.Domain.Interfaces.Repositories;
 using TasksManagement.Domain.Interfaces.Services;
 
@@ -41,6 +42,10 @@ namespace TasksManagement.Services
                 var project = await _projectService.GetByIdAsync(inputModel.ProjectId);
                 if (project == null || project.Data == null)
                     return Result.Failure<TaskItem>("Projeto não encontrado.", statusCode: 404);
+
+                var pendingTasks = project.Data.Tasks.Where(t => t.Status == ETaskStatus.Pending).ToList();
+                if (pendingTasks.Count >= 20)
+                    return Result.Failure<TaskItem>("Não é possível adicionar mais de 20 tarefas por projeto. Finalize ou remova tarefas existentes para adicionar uma nova tarefa.", statusCode: 422);
 
                 var task = new TaskItem(inputModel.Title!, inputModel.Description!, inputModel.DueDate, inputModel.Priority, inputModel.ProjectId);
 
