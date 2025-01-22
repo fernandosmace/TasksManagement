@@ -3,5 +3,5 @@
 namespace TasksManagement.Domain.Interfaces.Repositories;
 public interface ITaskHistoryRepository
 {
-    Task CreateAsync(TaskHistory history);
+    Task<Result> CreateAsync(TaskHistory history);
 }

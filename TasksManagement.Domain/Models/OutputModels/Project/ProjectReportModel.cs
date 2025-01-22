@@ -1,4 +1,8 @@
-﻿namespace TasksManagement.Domain.Models.OutputModels.Project;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace TasksManagement.Domain.Models.OutputModels.Project;
+
+[ExcludeFromCodeCoverage]
 public class ProjectReportModel
 {
     public Guid Id { get; set; }

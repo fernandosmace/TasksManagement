@@ -3,6 +3,6 @@
 namespace TasksManagement.Domain.Interfaces.Repositories;
 public interface IUserRepository
 {
-    Task<User?> GetByIdAsync(Guid id);
-    Task CreateAsync(User user);
+    Task<Result<User?>> GetByIdAsync(Guid id);
+    Task<Result> CreateAsync(User user);
 }

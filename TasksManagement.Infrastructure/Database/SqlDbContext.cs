@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 using TasksManagement.Domain.Entities;
 
 namespace TasksManagement.Infrastructure.Database;
 
+[ExcludeFromCodeCoverage]
 public class SqlDbContext : DbContext
 {
     public SqlDbContext(DbContextOptions<SqlDbContext> options) : base(options) { }

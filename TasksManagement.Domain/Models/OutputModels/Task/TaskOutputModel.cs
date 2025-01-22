@@ -1,7 +1,10 @@
-﻿using TasksManagement.Domain.Enums;
+﻿using System.Diagnostics.CodeAnalysis;
+using TasksManagement.Domain.Enums;
 using TasksManagement.Domain.Models.OutputModels.Comments;
 
 namespace TasksManagement.Domain.Models.OutputModels.Task;
+
+[ExcludeFromCodeCoverage]
 public record TaskOutputModel
 {
     public Guid Id { get; set; }

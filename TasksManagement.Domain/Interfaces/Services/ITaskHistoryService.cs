@@ -3,5 +3,5 @@
 namespace TasksManagement.Domain.Interfaces.Services;
 public interface ITaskHistoryService
 {
-    Task CreateAsync(TaskHistory history);
+    Task<Result> CreateAsync(TaskHistory history);
 }

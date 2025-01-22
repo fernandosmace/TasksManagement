@@ -29,7 +29,7 @@ public class Project : Entity
     {
         AddNotifications(new Contract<Project>()
             .Requires()
-            .IsNotNullOrEmpty(Name, nameof(Name), $"Campo {nameof(Name)} não foi informado."));
+            .IsNotNullOrWhiteSpace(Name, nameof(Name), $"Campo {nameof(Name)} não foi informado."));
     }
 
     public void ValidateForDelete()

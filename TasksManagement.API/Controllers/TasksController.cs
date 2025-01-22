@@ -35,7 +35,7 @@ public class TasksController : ControllerBase
     {
         var result = await _taskService.GetByIdAsync(id);
 
-        if (!result.IsSuccess)
+        if (!result.IsValid)
         {
             return StatusCode(result.StatusCode ?? 500, new
             {
@@ -81,7 +81,7 @@ public class TasksController : ControllerBase
 
         var result = await _taskService.CreateAsync(inputModel);
 
-        if (!result.IsSuccess)
+        if (!result.IsValid)
         {
             return StatusCode(result.StatusCode ?? 500, new
             {
@@ -122,7 +122,7 @@ public class TasksController : ControllerBase
 
         var result = await _taskService.UpdateAsync(id, inputModel);
 
-        if (!result.IsSuccess)
+        if (!result.IsValid)
         {
             return StatusCode(result.StatusCode ?? 500, new
             {
@@ -148,7 +148,7 @@ public class TasksController : ControllerBase
     {
         var result = await _taskService.DeleteAsync(id);
 
-        if (!result.IsSuccess)
+        if (!result.IsValid)
         {
             return StatusCode(result.StatusCode ?? 500, new
             {

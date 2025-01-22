@@ -1,4 +1,5 @@
 ﻿using TasksManagement.API.Models.InputModels.Comment;
+using TasksManagement.Domain;
 using TasksManagement.Domain.Entities;
 using TasksManagement.Domain.Interfaces.Repositories;
 using TasksManagement.Domain.Interfaces.Services;
@@ -28,17 +29,20 @@ public class CommentService : ICommentService
                 return Result.Failure<Comment>("Tarefa não encontrado.", statusCode: 404);
 
             var user = await _userService.GetByIdAsync(inputModel.User.Id);
-            if (user == null || user.Data == null)
+            if (!user.IsValid)
                 return Result.Failure<Comment>(message: "Úsuário não encontrado.", statusCode: 404);
 
             var comment = new Comment(inputModel.Content!, task.Data!.Id, user.Data.Id);
 
-            await _commentRepository.CreateAsync(comment);
+            var commentCreated = await _commentRepository.CreateAsync(comment);
+            if (!commentCreated.IsValid)
+                return Result.Failure<Comment>(message: "Falha ao criar o Comentário.", statusCode: 500);
+
             await _taskHistoryRepository.CreateAsync(
-                new TaskHistory(
-                    $"Comentário adicionado: '{comment.Content}'",
-                    comment.TaskId,
-                    user.Data.Id));
+                    new TaskHistory(
+                        $"Comentário adicionado: '{comment.Content}'",
+                        comment.TaskId,
+                        user.Data.Id));
 
             return Result.Success(comment);
         }

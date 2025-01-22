@@ -4,10 +4,10 @@ using TasksManagement.Domain.Models.ReportModels;
 namespace TasksManagement.Domain.Interfaces.Repositories;
 public interface IProjectRepository
 {
-    Task<Project?> GetByIdAsync(Guid id);
-    Task<IEnumerable<Project>> GetAllByUserIdAsync(Guid userId);
-    Task CreateAsync(Project project);
-    Task UpdateAsync(Project project);
-    Task DeleteAsync(Project project);
-    Task<IEnumerable<ProjectWithTasksCountReportModel>> GetTopProjectsWithMostCompletedTasksAsync(int days);
+    Task<Result<Project>> GetByIdAsync(Guid id);
+    Task<Result<IEnumerable<Project>>> GetAllByUserIdAsync(Guid userId);
+    Task<Result> CreateAsync(Project project);
+    Task<Result> UpdateAsync(Project project);
+    Task<Result> DeleteAsync(Project project);
+    Task<Result<IEnumerable<ProjectWithTasksCountReportModel>>> GetTopProjectsWithMostCompletedTasksAsync(int days);
 }

@@ -1,4 +1,5 @@
-﻿using TasksManagement.Domain.Interfaces.Repositories;
+﻿using TasksManagement.Domain;
+using TasksManagement.Domain.Interfaces.Repositories;
 using TasksManagement.Domain.Interfaces.Services;
 using TasksManagement.Domain.Models.OutputModels.Project;
 
@@ -18,10 +19,10 @@ public class ProjectReportService : IProjectReportService
     {
         var projects = await _projectRepository.GetTopProjectsWithMostCompletedTasksAsync(days);
 
-        if (projects == null || !projects.Any())
+        if (!projects.IsValid)
             return Result.Success(Enumerable.Empty<ProjectReportModel>());
 
-        var projectReport = projects.Select(p => new ProjectReportModel
+        var projectReport = projects.Data!.Select(p => new ProjectReportModel
         {
             Id = p.Id,
             Name = p.Name,

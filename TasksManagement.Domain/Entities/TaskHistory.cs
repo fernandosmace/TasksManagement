@@ -1,7 +1,10 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TasksManagement.Domain.Entities;
+
+[ExcludeFromCodeCoverage]
 public class TaskHistory
 {
     [BsonId, BsonGuidRepresentation(GuidRepresentation.Standard)]

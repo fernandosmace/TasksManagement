@@ -4,6 +4,8 @@ using TasksManagement.Domain.Interfaces.Services;
 using TasksManagement.Domain.Models.OutputModels;
 using TasksManagement.Domain.Models.OutputModels.Project;
 
+namespace TasksManagement.API.Controllers;
+
 [ApiController]
 [Route("api/reports")]
 public class TaskReportController : ControllerBase
@@ -33,13 +35,20 @@ public class TaskReportController : ControllerBase
     public async Task<IActionResult> GetTasksCompletedByUserAsync(Guid userId, Guid userRequestId, int days)
     {
         var user = await _userService.GetByIdAsync(userRequestId);
-        if (user == null || user.Data == null || !user.Data.Role.Equals("Gerente"))
+        if (!user.IsValid || !user.Data!.Role.Equals("Gerente"))
             return Unauthorized("Usuário sem permissão para geração de relatórios.");
 
         if (days > 30)
             return UnprocessableEntity("Não é possível geração de relatórios para período superior a 30 dias.");
 
         var result = await _taskReportService.GenerateCompletedTasksByUserReportAsync(userId, days);
+        if (!result.IsValid)
+            return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
+
         return Ok(result.Data);
     }
 
@@ -56,13 +65,20 @@ public class TaskReportController : ControllerBase
     public async Task<IActionResult> GetTasksWithMostCommentsAsync(Guid userRequestId, int days)
     {
         var user = await _userService.GetByIdAsync(userRequestId);
-        if (user == null || user.Data == null || !user.Data.Role.Equals("Gerente"))
+        if (!user.IsValid || !user.Data!.Role.Equals("Gerente"))
             return Unauthorized("Usuário sem permissão para geração de relatórios.");
 
         if (days > 30)
             return UnprocessableEntity("Não é possível geração de relatórios para período superior a 30 dias.");
 
         var result = await _taskReportService.GenerateTopTasksByCommentsAsync(days);
+        if (!result.IsValid)
+            return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
+
         return Ok(result.Data);
     }
 
@@ -79,13 +95,20 @@ public class TaskReportController : ControllerBase
     public async Task<IActionResult> GetProjectsWithMostCompletedTasksAsync(Guid userRequestId, int days)
     {
         var user = await _userService.GetByIdAsync(userRequestId);
-        if (user == null || user.Data == null || !user.Data.Role.Equals("Gerente"))
+        if (!user.IsValid || !user.Data!.Role.Equals("Gerente"))
             return Unauthorized("Usuário sem permissão para geração de relatórios.");
 
         if (days > 30)
             return UnprocessableEntity("Não é possível geração de relatórios para período superior a 30 dias.");
 
         var result = await _projectReportService.GenerateTopProjectsByCompletedTasksAsync(days);
+        if (!result.IsValid)
+            return StatusCode(result.StatusCode ?? 500, new ErrorResultOutputModel
+                (
+                    result.Message,
+                    result.Notifications.ToList()
+                ));
+
         return Ok(result.Data);
     }
 }

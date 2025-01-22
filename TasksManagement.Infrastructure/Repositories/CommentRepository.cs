@@ -1,4 +1,5 @@
-﻿using TasksManagement.Domain.Entities;
+﻿using TasksManagement.Domain;
+using TasksManagement.Domain.Entities;
 using TasksManagement.Domain.Interfaces.Repositories;
 using TasksManagement.Infrastructure.Database;
 
@@ -12,9 +13,17 @@ public class CommentRepository : ICommentRepository
         _context = context;
     }
 
-    public async Task CreateAsync(Comment comment)
+    public async Task<Result> CreateAsync(Comment comment)
     {
-        _context.Comments.Add(comment);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.Comments.Add(comment);
+            await _context.SaveChangesAsync();
+            return Result.Success();
+        }
+        catch
+        {
+            return Result.Failure();
+        }
     }
 }

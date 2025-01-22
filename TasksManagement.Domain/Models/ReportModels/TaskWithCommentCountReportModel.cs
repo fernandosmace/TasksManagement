@@ -1,4 +1,8 @@
-﻿namespace TasksManagement.Domain.Models.ReportModels;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace TasksManagement.Domain.Models.ReportModels;
+
+[ExcludeFromCodeCoverage]
 public class TaskWithCommentCountReportModel
 {
     public Guid TaskId { get; set; }

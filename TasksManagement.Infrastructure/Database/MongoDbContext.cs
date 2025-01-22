@@ -1,9 +1,10 @@
 ﻿using MongoDB.Driver;
+using System.Diagnostics.CodeAnalysis;
 using TasksManagement.Domain.Entities;
 
 namespace TasksManagement.Infrastructure.Database;
-
-public class MongoDbContext
+[ExcludeFromCodeCoverage]
+public class MongoDbContext : IMongoDbContext
 {
     private readonly IMongoDatabase _database;
 

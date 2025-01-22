@@ -22,6 +22,6 @@ public class Comment : Entity
     {
         AddNotifications(new Contract<Comment>()
             .Requires()
-            .IsNotNullOrEmpty(Content, nameof(Content), $"Campo {nameof(Content)} não foi informado."));
+            .IsNotNullOrWhiteSpace(Content, nameof(Content), $"Campo {nameof(Content)} não foi informado."));
     }
 }

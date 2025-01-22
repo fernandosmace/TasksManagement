@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using TasksManagement.Domain.Enums;
 
 namespace TasksManagement.API.Models.InputModels.Task;
 
+[ExcludeFromCodeCoverage]
 public record CreateTaskInputModel
 {
     public string? Title { get; set; }

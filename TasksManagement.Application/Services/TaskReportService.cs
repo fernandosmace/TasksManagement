@@ -1,4 +1,5 @@
 ﻿using TasksManagement.API.Models.OutputModels.Task;
+using TasksManagement.Domain;
 using TasksManagement.Domain.Interfaces.Repositories;
 using TasksManagement.Domain.Interfaces.Services;
 
@@ -16,36 +17,53 @@ public class TaskReportService : ITaskReportService
 
     public async Task<Result<IEnumerable<TaskReportModel>>> GenerateCompletedTasksByUserReportAsync(Guid userId, int days = 30)
     {
-        var projects = await _projectRepository.GetAllByUserIdAsync(userId);
-
-        if (projects == null)
-            return Result.Success(Enumerable.Empty<TaskReportModel>());
-
-        var dateThreshold = DateTime.UtcNow.AddDays(-days);
-        var tasks = await _taskRepository.GetCompletedTasksByProjectIdAsync(projects, dateThreshold);
-
-        var reports = tasks.Select(task => new TaskReportModel
+        try
         {
-            TaskId = task.Id,
-            Title = task.Title,
-            CompletionDate = task.CompletionDate!.Value
-        });
+            var projects = await _projectRepository.GetAllByUserIdAsync(userId);
+            if (!projects.IsValid)
+                return Result.Success(Enumerable.Empty<TaskReportModel>());
 
-        return Result.Success<IEnumerable<TaskReportModel>>(reports.ToList());
+            var dateThreshold = DateTime.UtcNow.AddDays(-days);
+            var tasks = await _taskRepository.GetCompletedTasksByProjectIdAsync(projects.Data!, dateThreshold);
+            if (!tasks.IsValid)
+                return Result.Failure<IEnumerable<TaskReportModel>>("Erro ao gerar relatório.", statusCode: 500);
+
+            var reports = tasks.Data!.Select(task => new TaskReportModel
+            {
+                TaskId = task.Id,
+                Title = task.Title,
+                CompletionDate = task.CompletionDate!.Value
+            });
+
+            return Result.Success<IEnumerable<TaskReportModel>>(reports.ToList());
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<IEnumerable<TaskReportModel>>("Erro ao gerar relatório.", statusCode: 500);
+        }
     }
 
     public async Task<Result<IEnumerable<TaskReportModel>>> GenerateTopTasksByCommentsAsync(int days = 30)
     {
-        var dateThreshold = DateTime.UtcNow.AddDays(-days);
-        var tasksWithComments = await _taskRepository.GetTopTasksWithMostCommentsAsync(dateThreshold);
-
-        var reports = tasksWithComments.Select(x => new TaskReportModel
+        try
         {
-            TaskId = x.TaskId,
-            Title = x.Title,
-            CommentCount = x.CommentCount
-        });
+            var dateThreshold = DateTime.UtcNow.AddDays(-days);
+            var tasksWithComments = await _taskRepository.GetTopTasksWithMostCommentsAsync(dateThreshold);
+            if (!tasksWithComments.IsValid)
+                return Result.Failure<IEnumerable<TaskReportModel>>("Erro ao gerar relatório.", statusCode: 500);
 
-        return Result.Success<IEnumerable<TaskReportModel>>(reports.ToList());
+            var reports = tasksWithComments.Data!.Select(x => new TaskReportModel
+            {
+                TaskId = x.TaskId,
+                Title = x.Title,
+                CommentCount = x.CommentCount
+            });
+
+            return Result.Success<IEnumerable<TaskReportModel>>(reports.ToList());
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<IEnumerable<TaskReportModel>>("Erro ao gerar relatório.", statusCode: 500);
+        }
     }
 }

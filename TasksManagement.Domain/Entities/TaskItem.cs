@@ -40,11 +40,11 @@ public class TaskItem : Entity
 
         if (status == ETaskStatus.Completed)
         {
-            CompletionDate = DateTime.UtcNow; // Define a data de conclusão, se a tarefa é completada
+            CompletionDate = DateTime.UtcNow;
         }
         else if (status == ETaskStatus.Pending)
         {
-            CompletionDate = null; // Limpa a data de conclusão se a tarefa voltar a ser pendente
+            CompletionDate = null;
         }
 
         Validar();

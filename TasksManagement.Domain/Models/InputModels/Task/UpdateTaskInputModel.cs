@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using TasksManagement.API.Models.InputModels.User;
 using TasksManagement.Domain.Enums;
 
 namespace TasksManagement.API.Models.InputModels.Task;
 
-public class UpdateTaskInputModel
+[ExcludeFromCodeCoverage]
+public record UpdateTaskInputModel
 {
     [Required(ErrorMessage = "Usuário não informado")]
     public UserInputModel User { get; set; }

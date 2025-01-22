@@ -1,4 +1,5 @@
-﻿using TasksManagement.Domain.Entities;
+﻿using TasksManagement.Domain;
+using TasksManagement.Domain.Entities;
 using TasksManagement.Domain.Interfaces.Repositories;
 using TasksManagement.Domain.Interfaces.Services;
 
@@ -12,5 +13,16 @@ public class TaskHistoryService : ITaskHistoryService
         _taskHistoryRepository = taskHistoryRepository;
     }
 
-    public async Task CreateAsync(TaskHistory history) => await _taskHistoryRepository.CreateAsync(history);
+    public async Task<Result> CreateAsync(TaskHistory history)
+    {
+        try
+        {
+            await _taskHistoryRepository.CreateAsync(history);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure("Falha ao gravar histórico da tarefa.", statusCode: 500);
+        }
+    }
 }

@@ -1,4 +1,9 @@
-﻿namespace TasksManagement.Domain.Models.OutputModels.Comments;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace TasksManagement.Domain.Models.OutputModels.Comments;
+
+
+[ExcludeFromCodeCoverage]
 public record CommentWithTaskOutputModel
 {
     public Guid Id { get; set; }

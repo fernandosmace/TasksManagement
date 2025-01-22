@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using TasksManagement.API.Models.InputModels.User;
 
 namespace TasksManagement.API.Models.InputModels.Project;
 
+[ExcludeFromCodeCoverage]
 public record CreateProjectInputModel
 {
 

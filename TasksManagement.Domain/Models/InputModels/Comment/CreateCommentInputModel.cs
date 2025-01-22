@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using TasksManagement.API.Models.InputModels.User;
 
 namespace TasksManagement.API.Models.InputModels.Comment;
 
+[ExcludeFromCodeCoverage]
 public record CreateCommentInputModel
 {
     public Guid TaskId { get; set; }

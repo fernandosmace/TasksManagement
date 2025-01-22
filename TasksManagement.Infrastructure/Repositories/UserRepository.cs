@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TasksManagement.Domain;
 using TasksManagement.Domain.Entities;
 using TasksManagement.Domain.Interfaces.Repositories;
 using TasksManagement.Infrastructure.Database;
@@ -12,10 +13,30 @@ public class UserRepository : IUserRepository
     {
         _context = context;
     }
-    public async Task<User?> GetByIdAsync(Guid id) => await _context.Users.FirstOrDefaultAsync(t => t.Id == id);
-    public async Task CreateAsync(User user)
+    public async Task<Result<User?>> GetByIdAsync(Guid id)
     {
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        try
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(t => t.Id == id);
+            return Result.Success(user);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<User?>($"Erro ao buscar usuário: {ex.Message}");
+        }
+    }
+    public async Task<Result> CreateAsync(User user)
+    {
+        try
+        {
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+
+            return Result.Failure($"Erro ao criar usuário: {ex.Message}");
+        }
     }
 }

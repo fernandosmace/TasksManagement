@@ -1,5 +1,8 @@
-﻿namespace TasksManagement.API.Models.InputModels.User;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace TasksManagement.API.Models.InputModels.User;
+
+[ExcludeFromCodeCoverage]
 public record UserInputModel
 {
     public Guid Id { get; set; }

@@ -1,5 +1,8 @@
-﻿namespace TasksManagement.API.Models.OutputModels.Task;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace TasksManagement.API.Models.OutputModels.Task;
+
+[ExcludeFromCodeCoverage]
 public class TaskReportModel
 {
     public Guid TaskId { get; set; }
