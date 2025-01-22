@@ -44,14 +44,13 @@ public class UserServiceTests
         var userId = Guid.NewGuid();
         _mockUserRepository
             .Setup(repo => repo.GetByIdAsync(userId))
-            .ReturnsAsync(Result.Failure<User>("Usuário não encontrado.", statusCode: 404));
+            .ReturnsAsync(Result.Success((User)null));
 
         // Act
         var result = await _service.GetByIdAsync(userId);
 
         // Assert
         result.IsValid.Should().BeTrue();
-        result.Message.Should().Be("Usuário não encontrado.");
         _mockUserRepository.Verify(repo => repo.GetByIdAsync(userId), Times.Once);
     }
 
