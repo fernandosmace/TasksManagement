@@ -16,7 +16,14 @@ public static class WebApplicationExtensions
 
             if (pendingMigrations.Any())
             {
-                dbContext.Database.Migrate();
+                try
+                {
+                    dbContext.Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Erro ao aplicar migrations pendentes.", ex);
+                }
             }
         }
     }

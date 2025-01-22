@@ -1,77 +1,63 @@
 ﻿using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Moq;
-using TasksManagement.Domain;
 using TasksManagement.Domain.Entities;
-using TasksManagement.Domain.Interfaces.Repositories;
-using TasksManagement.Domain.Models.ReportModels;
+using TasksManagement.Domain.Enums;
+using TasksManagement.Infrastructure.Database;
+using TasksManagement.Infrastructure.Repositories;
 
 namespace TasksManagement.Tests.Repositories;
+
 public class ProjectRepositoryTests
 {
-    private readonly Mock<IProjectRepository> _mockProjectRepository;
+    private readonly DbContextOptions<SqlDbContext> _dbContextOptions;
 
     public ProjectRepositoryTests()
     {
-        _mockProjectRepository = new Mock<IProjectRepository>();
+        // Configura o banco de dados em memória
+        _dbContextOptions = new DbContextOptionsBuilder<SqlDbContext>()
+            .UseInMemoryDatabase("TestDatabase")
+            .Options;
     }
 
     [Fact]
     public async Task GetByIdAsync_Should_Return_Project_When_Id_Exists()
     {
         // Arrange
-        var projectId = Guid.NewGuid();
         var project = new Project("Projeto Teste", Guid.NewGuid());
 
-        _mockProjectRepository
-            .Setup(repo => repo.GetByIdAsync(It.Is<Guid>(id => id == projectId)))
-            .ReturnsAsync(Result.Success(project));
+        // Adiciona o projeto ao banco em memória
+        using (var context = new SqlDbContext(_dbContextOptions))
+        {
+            context.Projects.Add(project);
+            await context.SaveChangesAsync();
+        }
 
-        var repository = _mockProjectRepository.Object;
+        // Instancia o repositório com o contexto real
+        var repository = new ProjectRepository(new SqlDbContext(_dbContextOptions));
 
         // Act
-        var result = await repository.GetByIdAsync(projectId);
+        var result = await repository.GetByIdAsync(project.Id);
 
         // Assert
         result.IsValid.Should().BeTrue("O projeto deve ser retornado com sucesso.");
         result.Data.Should().NotBeNull("O projeto deve ser retornado se o ID existir");
-        result.Data.Name.Should().Be("Projeto Teste", "O nome do projeto deve corresponder ao esperado");
+        result.Data!.Name.Should().Be("Projeto Teste", "O nome do projeto deve corresponder ao esperado");
     }
 
     [Fact]
     public async Task GetByIdAsync_Should_Return_Failure_When_Id_Does_Not_Exist()
     {
         // Arrange
-        _mockProjectRepository
-            .Setup(repo => repo.GetByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(Result.Failure<Project>("Projeto não encontrado"));
-
-        var repository = _mockProjectRepository.Object;
+        var nonExistentProjectId = Guid.NewGuid();
+        var repository = new ProjectRepository(new SqlDbContext(_dbContextOptions));
 
         // Act
-        var result = await repository.GetByIdAsync(Guid.NewGuid());
+        var result = await repository.GetByIdAsync(nonExistentProjectId);
 
         // Assert
-        result.IsValid.Should().BeFalse("Deve falhar caso o projeto não exista");
-        result.Message.Should().Be("Projeto não encontrado", "A mensagem de erro deve ser a esperada.");
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_Should_Return_Failure_When_Exception_Occurs()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-
-        _mockProjectRepository
-            .Setup(repo => repo.GetByIdAsync(It.Is<Guid>(id => id == projectId)))
-            .ThrowsAsync(new Exception("Erro ao acessar o banco de dados"));
-
-        var repository = _mockProjectRepository.Object;
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(async () => await repository.GetByIdAsync(projectId));
-
-        // Verifica a mensagem da exceção
-        exception.Message.Should().Be("Erro ao acessar o banco de dados", "A mensagem da exceção deve ser a esperada.");
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Be("Projeto não encontrado.");
     }
 
     [Fact]
@@ -80,16 +66,18 @@ public class ProjectRepositoryTests
         // Arrange
         var userId = Guid.NewGuid();
         var projects = new List<Project>
-            {
-                new Project("Projeto 1", userId),
-                new Project("Projeto 2", userId)
-            };
+        {
+            new Project("Projeto 1", userId),
+            new Project("Projeto 2", userId)
+        };
 
-        _mockProjectRepository
-            .Setup(repo => repo.GetAllByUserIdAsync(It.Is<Guid>(id => id == userId)))
-            .ReturnsAsync(Result.Success((IEnumerable<Project>)projects));
+        using (var context = new SqlDbContext(_dbContextOptions))
+        {
+            context.Projects.AddRange(projects);
+            await context.SaveChangesAsync();
+        }
 
-        var repository = _mockProjectRepository.Object;
+        var repository = new ProjectRepository(new SqlDbContext(_dbContextOptions));
 
         // Act
         var result = await repository.GetAllByUserIdAsync(userId);
@@ -101,42 +89,17 @@ public class ProjectRepositoryTests
     }
 
     [Fact]
-    public async Task GetAllByUserIdAsync_Should_Return_Failure_When_Exception_Occurs()
-    {
-        // Arrange
-        var userId = Guid.NewGuid();
-
-        _mockProjectRepository
-            .Setup(repo => repo.GetAllByUserIdAsync(It.Is<Guid>(id => id == userId)))
-            .ThrowsAsync(new Exception("Erro ao acessar os projetos do usuário"));
-
-        var repository = _mockProjectRepository.Object;
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(async () => await repository.GetAllByUserIdAsync(userId));
-
-        // Verifica a mensagem da exceção
-        exception.Message.Should().Be("Erro ao acessar os projetos do usuário", "A mensagem da exceção deve ser a esperada.");
-    }
-
-    [Fact]
     public async Task CreateAsync_Should_Save_Project_Successfully()
     {
         // Arrange
         var project = new Project("Novo Projeto", Guid.NewGuid());
-
-        _mockProjectRepository
-            .Setup(repo => repo.CreateAsync(It.IsAny<Project>()))
-            .ReturnsAsync(Result.Success("Projeto criado com sucesso."));
-
-        var repository = _mockProjectRepository.Object;
+        var repository = new ProjectRepository(new SqlDbContext(_dbContextOptions));
 
         // Act
         var result = await repository.CreateAsync(project);
 
         // Assert
         result.IsValid.Should().BeTrue("Deve retornar sucesso após salvar o projeto.");
-        _mockProjectRepository.Verify(repo => repo.CreateAsync(It.IsAny<Project>()), Times.Once, "O método CreateAsync deve ser chamado uma vez");
     }
 
     [Fact]
@@ -145,135 +108,96 @@ public class ProjectRepositoryTests
         // Arrange
         var project = new Project("Novo Projeto", Guid.NewGuid());
 
-        _mockProjectRepository
-            .Setup(repo => repo.CreateAsync(It.IsAny<Project>()))
-            .ThrowsAsync(new Exception("Erro ao salvar o projeto"));
+        var mockDbContext = new Mock<SqlDbContext>(_dbContextOptions);
+        mockDbContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Erro ao salvar o projeto"));
 
-        var repository = _mockProjectRepository.Object;
+        var repository = new ProjectRepository(mockDbContext.Object);
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(async () => await repository.CreateAsync(project));
+        // Act
+        var result = await repository.CreateAsync(project);
 
-        exception.Message.Should().Be("Erro ao salvar o projeto", "A mensagem da exceção deve ser a esperada.");
+        // Assert
+        result.IsValid.Should().BeFalse("Deve retornar falha quando ocorrer uma exceção.");
+        result.Message.Should().Contain("Erro ao criar o projeto", "Erro ao criar o projeto.");
     }
 
     [Fact]
     public async Task UpdateAsync_Should_Update_Project_Successfully()
     {
         // Arrange
-        var project = new Project("Projeto Atualizado", Guid.NewGuid());
+        var project = new Project("Projeto Teste", Guid.NewGuid());
 
-        _mockProjectRepository
-            .Setup(repo => repo.UpdateAsync(It.IsAny<Project>()))
-            .ReturnsAsync(Result.Success("Projeto atualizado com sucesso."));
+        // Adiciona o projeto ao banco em memória
+        using (var context = new SqlDbContext(_dbContextOptions))
+        {
+            context.Projects.Add(project);
+            await context.SaveChangesAsync();
+        }
 
-        var repository = _mockProjectRepository.Object;
+        var repository = new ProjectRepository(new SqlDbContext(_dbContextOptions));
+
+        // Atualiza o projeto
+        project.Update("Projeto Atualizado");
 
         // Act
         var result = await repository.UpdateAsync(project);
 
         // Assert
         result.IsValid.Should().BeTrue("Deve retornar sucesso após atualizar o projeto.");
-        _mockProjectRepository.Verify(repo => repo.UpdateAsync(It.IsAny<Project>()), Times.Once, "O método UpdateAsync deve ser chamado uma vez");
-    }
-
-    [Fact]
-    public async Task UpdateAsync_Should_Return_Failure_When_Exception_Occurs()
-    {
-        // Arrange
-        var project = new Project("Projeto Atualizado", Guid.NewGuid());
-
-        _mockProjectRepository
-            .Setup(repo => repo.UpdateAsync(It.IsAny<Project>()))
-            .ThrowsAsync(new Exception("Erro ao atualizar o projeto"));
-
-        var repository = _mockProjectRepository.Object;
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(async () => await repository.UpdateAsync(project));
-
-        // Verifica a mensagem da exceção
-        exception.Message.Should().Be("Erro ao atualizar o projeto", "A mensagem da exceção deve ser a esperada.");
     }
 
     [Fact]
     public async Task DeleteAsync_Should_Remove_Project_Successfully()
     {
         // Arrange
-        var project = new Project("Projeto Removido", Guid.NewGuid());
+        var project = new Project("Projeto Teste", Guid.NewGuid());
 
-        _mockProjectRepository
-            .Setup(repo => repo.DeleteAsync(It.IsAny<Project>()))
-            .ReturnsAsync(Result.Success("Projeto deletado com sucesso."));
+        // Adiciona o projeto ao banco em memória
+        using (var context = new SqlDbContext(_dbContextOptions))
+        {
+            context.Projects.Add(project);
+            await context.SaveChangesAsync();
+        }
 
-        var repository = _mockProjectRepository.Object;
+        var repository = new ProjectRepository(new SqlDbContext(_dbContextOptions));
 
         // Act
         var result = await repository.DeleteAsync(project);
 
         // Assert
         result.IsValid.Should().BeTrue("Deve retornar sucesso após deletar o projeto.");
-        _mockProjectRepository.Verify(repo => repo.DeleteAsync(It.IsAny<Project>()), Times.Once, "O método DeleteAsync deve ser chamado uma vez");
-    }
-
-    [Fact]
-    public async Task DeleteAsync_Should_Return_Failure_When_Exception_Occurs()
-    {
-        // Arrange
-        var project = new Project("Projeto Removido", Guid.NewGuid());
-
-        _mockProjectRepository
-            .Setup(repo => repo.DeleteAsync(It.IsAny<Project>()))
-            .ThrowsAsync(new Exception("Erro ao deletar o projeto"));
-
-        var repository = _mockProjectRepository.Object;
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(async () => await repository.DeleteAsync(project));
-
-        // Verifica a mensagem da exceção
-        exception.Message.Should().Be("Erro ao deletar o projeto", "A mensagem da exceção deve ser a esperada.");
     }
 
     [Fact]
     public async Task GetTopProjectsWithMostCompletedTasksAsync_Should_Return_Top_Projects()
     {
         // Arrange
-        var projectsWithTasks = new List<ProjectWithTasksCountReportModel>
-            {
-                new ProjectWithTasksCountReportModel { Id = Guid.NewGuid(), Name = "Projeto 1", TasksCount = 10 },
-                new ProjectWithTasksCountReportModel { Id = Guid.NewGuid(), Name = "Projeto 2", TasksCount = 5 }
-            };
+        var project = new Project("Projeto Teste", Guid.NewGuid());
 
-        _mockProjectRepository
-            .Setup(repo => repo.GetTopProjectsWithMostCompletedTasksAsync(It.IsAny<int>()))
-            .ReturnsAsync(Result.Success((IEnumerable<ProjectWithTasksCountReportModel>)projectsWithTasks));
+        var tasks = new List<TaskItem>
+        {
+            new TaskItem("Tarefa Concluída", "Descrição", DateTime.Now.AddDays(5), ETaskPriority.Medium, project.Id)
+        };
 
-        var repository = _mockProjectRepository.Object;
+        tasks.ForEach(t => t.Update(t.Title, t.Description, t.DueDate, ETaskStatus.Completed));
+        tasks.ForEach(t => t.GetType().GetProperty("CompletionDate")?.SetValue(t, DateTime.Now));
+
+        using (var context = new SqlDbContext(_dbContextOptions))
+        {
+            context.Projects.Add(project);
+            context.Tasks.AddRange(tasks);
+            await context.SaveChangesAsync();
+        }
+
+        var repository = new ProjectRepository(new SqlDbContext(_dbContextOptions));
 
         // Act
         var result = await repository.GetTopProjectsWithMostCompletedTasksAsync(30);
 
         // Assert
-        result.IsValid.Should().BeTrue("Deve retornar sucesso ao buscar projetos com mais tarefas concluídas.");
-        result.Data.Should().HaveCount(2, "Devem ser retornados dois projetos com mais tarefas concluídas");
-        result.Data.First().Name.Should().Be("Projeto 1", "O nome do primeiro projeto deve ser 'Projeto 1'");
-    }
-
-    [Fact]
-    public async Task GetTopProjectsWithMostCompletedTasksAsync_Should_Return_Failure_When_Exception_Occurs()
-    {
-        // Arrange
-        _mockProjectRepository
-            .Setup(repo => repo.GetTopProjectsWithMostCompletedTasksAsync(It.IsAny<int>()))
-            .ThrowsAsync(new Exception("Erro ao buscar projetos com tarefas completadas"));
-
-        var repository = _mockProjectRepository.Object;
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(async () => await repository.GetTopProjectsWithMostCompletedTasksAsync(30));
-
-        // Verifica a mensagem da exceção
-        exception.Message.Should().Be("Erro ao buscar projetos com tarefas completadas", "A mensagem da exceção deve ser a esperada.");
+        result.IsValid.Should().BeTrue("Deve retornar projetos com mais tarefas concluídas.");
+        result.Data.Should().HaveCount(1, "Deve retornar 1 projeto com mais tarefas concluídas");
+        result.Data.First().Name.Should().Be("Projeto Teste", "O nome do projeto deve ser 'Projeto Teste'");
     }
 }
+

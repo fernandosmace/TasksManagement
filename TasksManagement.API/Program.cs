@@ -24,7 +24,6 @@ namespace TasksManagement.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
-
                 c.MapType<NoContentResult>(() => new OpenApiSchema { Type = "null" });
 
                 c.EnableAnnotations();
@@ -48,7 +47,6 @@ namespace TasksManagement.API
                 // Configuração do Swagger UI
                 app.UseSwaggerUI(c =>
                 {
-                    c.RoutePrefix = string.Empty;
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
                 });
             }

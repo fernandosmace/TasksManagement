@@ -88,6 +88,7 @@ public class TaskRepository : ITaskRepository
         try
         {
             var projectIds = projects.Select(p => p.Id).ToList();
+
             var tasks = await _context.Tasks
                 .Where(t => projectIds.Contains(t.ProjectId) &&
                             t.Status == Domain.Enums.ETaskStatus.Completed &&

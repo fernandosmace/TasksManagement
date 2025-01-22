@@ -1,17 +1,22 @@
 ﻿using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Moq;
-using TasksManagement.Domain;
 using TasksManagement.Domain.Entities;
-using TasksManagement.Domain.Interfaces.Repositories;
+using TasksManagement.Infrastructure.Database;
+using TasksManagement.Infrastructure.Repositories;
 
 namespace TasksManagement.Tests.Repositories;
+
 public class CommentRepositoryTests
 {
-    private readonly Mock<ICommentRepository> _mockCommentRepository;
+    private readonly DbContextOptions<SqlDbContext> _dbContextOptions;
 
     public CommentRepositoryTests()
     {
-        _mockCommentRepository = new Mock<ICommentRepository>();
+        // Configura o banco de dados em memória
+        _dbContextOptions = new DbContextOptionsBuilder<SqlDbContext>()
+            .UseInMemoryDatabase("TestDatabase")
+            .Options;
     }
 
     [Fact]
@@ -19,42 +24,34 @@ public class CommentRepositoryTests
     {
         // Arrange
         var comment = new Comment("Este é um comentário", Guid.NewGuid(), Guid.NewGuid());
-
-        _mockCommentRepository
-            .Setup(repo => repo.CreateAsync(It.IsAny<Comment>()))
-            .ReturnsAsync(Result.Success("Comentário criado com sucesso"));
-
-        var repository = _mockCommentRepository.Object;
+        var repository = new CommentRepository(new SqlDbContext(_dbContextOptions));
 
         // Act
         var result = await repository.CreateAsync(comment);
 
         // Assert
-        result.IsValid.Should().BeTrue("O resultado da criação deve ser bem-sucedido.");
-        result.Message.Should().Be("Comentário criado com sucesso", "A mensagem de sucesso deve ser a esperada.");
-        result.Data.Should().BeNull("Não há dados adicionais retornados.");
-        _mockCommentRepository.Verify(repo => repo.CreateAsync(It.IsAny<Comment>()), Times.Once, "O método CreateAsync deve ser chamado uma vez.");
+        result.IsValid.Should().BeTrue();
+        result.Message.Should().Be(null);
     }
 
     [Fact]
-    public async Task CreateAsync_Should_Fail_When_Repository_Throws_Exception()
+    public async Task CreateAsync_Should_Return_Failure_When_Exception_Occurs()
     {
         // Arrange
         var comment = new Comment("Este é um comentário", Guid.NewGuid(), Guid.NewGuid());
 
-        _mockCommentRepository
-            .Setup(repo => repo.CreateAsync(It.IsAny<Comment>()))
-            .ReturnsAsync(Result.Failure("Erro ao salvar o comentário"));
+        var mockDbContext = new Mock<SqlDbContext>(_dbContextOptions);
+        mockDbContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Erro ao salvar o comentário"));
 
-        var repository = _mockCommentRepository.Object;
+        var repository = new CommentRepository(mockDbContext.Object);
 
         // Act
         var result = await repository.CreateAsync(comment);
 
         // Assert
         result.IsValid.Should().BeFalse("O resultado da criação deve falhar.");
-        result.Message.Should().Be("Erro ao salvar o comentário", "A mensagem de erro deve ser a esperada.");
-        result.Data.Should().BeNull("Não há dados adicionais retornados.");
-        _mockCommentRepository.Verify(repo => repo.CreateAsync(It.IsAny<Comment>()), Times.Once, "O método CreateAsync deve ser chamado uma vez.");
+        result.Message.Should().Be(null);
     }
 }
+
+

@@ -246,5 +246,124 @@ public class TaskServiceTests
         _mockTaskRepository.Verify(repo => repo.GetByIdAsync(taskId), Times.Once);
         _mockTaskRepository.Verify(repo => repo.DeleteAsync(It.IsAny<TaskItem>()), Times.Once);
     }
-}
 
+    [Fact]
+    public async Task CreateAsync_Should_Return_Failure_When_Task_Validation_Fails()
+    {
+        // Arrange
+        var projectId = Guid.NewGuid();
+        var project = new Project("Project 1", projectId);
+        var inputModel = new CreateTaskInputModel("", "description", DateTime.UtcNow.AddDays(1), ETaskPriority.Medium, projectId); // Título inválido
+
+        _mockProjectService
+            .Setup(service => service.GetByIdAsync(inputModel.ProjectId))
+            .ReturnsAsync(Result.Success(project));
+
+        var service = new TaskService(_mockProjectService.Object, _mockUserService.Object, _mockTaskRepository.Object);
+
+        // Act
+        var result = await service.CreateAsync(inputModel);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Contain("Erro ao validar a Task");
+        _mockProjectService.Verify(service => service.GetByIdAsync(inputModel.ProjectId), Times.Once);
+        _mockTaskRepository.Verify(repo => repo.CreateAsync(It.IsAny<TaskItem>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_Should_Return_Failure_When_Task_Creation_Fails()
+    {
+        // Arrange
+        var projectId = Guid.NewGuid();
+        var project = new Project("Project 1", projectId);
+        var inputModel = new CreateTaskInputModel("Task 1", "description", DateTime.UtcNow.AddDays(1), ETaskPriority.Medium, projectId);
+        var task = new TaskItem(inputModel.Title!, inputModel.Description!, inputModel.DueDate, inputModel.Priority, inputModel.ProjectId);
+
+        _mockProjectService
+            .Setup(service => service.GetByIdAsync(inputModel.ProjectId))
+            .ReturnsAsync(Result.Success(project));
+        _mockTaskRepository
+            .Setup(repo => repo.CreateAsync(It.IsAny<TaskItem>()))
+            .ReturnsAsync(Result.Failure("Erro ao criar a tarefa."));
+
+        var service = new TaskService(_mockProjectService.Object, _mockUserService.Object, _mockTaskRepository.Object);
+
+        // Act
+        var result = await service.CreateAsync(inputModel);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Be("Erro ao criar a tarefa.");
+        _mockProjectService.Verify(service => service.GetByIdAsync(inputModel.ProjectId), Times.Once);
+        _mockTaskRepository.Verify(repo => repo.CreateAsync(It.IsAny<TaskItem>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_Should_Return_Failure_When_Task_Validation_Fails()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var task = new TaskItem("Task 1", "description", DateTime.UtcNow.AddDays(1), ETaskPriority.Medium, Guid.NewGuid());
+        var inputModel = new UpdateTaskInputModel(new UserInputModel(Guid.NewGuid(), "User", "Role"), "", "description", DateTime.UtcNow.AddDays(1), ETaskStatus.Completed); // Título inválido
+
+        _mockTaskRepository
+            .Setup(repo => repo.GetByIdAsync(taskId))
+            .ReturnsAsync(Result.Success(task));
+        _mockUserService
+            .Setup(service => service.GetByIdAsync(inputModel.User.Id))
+            .ReturnsAsync(Result.Success(new User("User", "Role")));
+
+        var service = new TaskService(_mockProjectService.Object, _mockUserService.Object, _mockTaskRepository.Object);
+
+        // Act
+        var result = await service.UpdateAsync(taskId, inputModel);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Contain("Ocorreu um erro inesperado");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_Should_Return_Failure_When_Exception_Occurs()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var inputModel = new UpdateTaskInputModel(new UserInputModel(Guid.NewGuid(), "User", "Role"), "Task 1", "description", DateTime.UtcNow.AddDays(1), ETaskStatus.Completed);
+
+        _mockTaskRepository
+            .Setup(repo => repo.GetByIdAsync(taskId))
+            .ThrowsAsync(new Exception("Erro ao buscar tarefa"));
+
+        var service = new TaskService(_mockProjectService.Object, _mockUserService.Object, _mockTaskRepository.Object);
+
+        // Act
+        var result = await service.UpdateAsync(taskId, inputModel);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Contain("Ocorreu um erro inesperado");
+        _mockTaskRepository.Verify(repo => repo.GetByIdAsync(taskId), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Should_Return_Failure_When_Exception_Occurs()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+
+        _mockTaskRepository
+            .Setup(repo => repo.GetByIdAsync(taskId))
+            .ThrowsAsync(new Exception("Erro ao buscar tarefa"));
+
+        var service = new TaskService(_mockProjectService.Object, _mockUserService.Object, _mockTaskRepository.Object);
+
+        // Act
+        var result = await service.DeleteAsync(taskId);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Contain("Ocorreu um erro inesperado");
+        _mockTaskRepository.Verify(repo => repo.GetByIdAsync(taskId), Times.Once);
+    }
+}
